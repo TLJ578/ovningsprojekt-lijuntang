@@ -91,7 +91,9 @@ describe("POST /orders/:id/cancel", () => {
   });
 
   it("returnerar 400 om beställningen lades för mer än 30 minuter sedan", async () => {
-    await db.query("UPDATE orders SET created_at = now() - interval '45 minutes' WHERE id = 1042");
+    await db.query(
+      "UPDATE orders SET status = 'new', created_at = now() - interval '45 minutes' WHERE id = 1042",
+    );
 
     const res = await request(app).post("/orders/1042/cancel").set("X-Customer-Id", "1");
     expect(res.status).toBe(400);
