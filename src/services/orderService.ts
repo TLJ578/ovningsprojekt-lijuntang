@@ -81,3 +81,32 @@ export async function getOrder(orderId: number, customerId: number): Promise<Res
   );
   return ok({ ...order, lines: lines.rows });
 }
+
+export async function cancelOrder(orderId: number, customerId: number): Promise<Result<Order>> {
+  const res = await db.query(
+    `SELECT id, customer_id AS "customerId", status, created_at AS "createdAt"
+       FROM orders WHERE id = $1`,
+    [orderId],
+  );
+  if (res.rowCount === 0) {
+    return err("not_found", `Beställning ${orderId} finns inte.`);
+  }
+  const order = res.rows[0];
+  if (order.customerId !== customerId) {
+    return err("forbidden", "Beställningen tillhör en annan kund.");
+  }
+  if (order.status !== "new") {
+    return err("invalid_state", "Beställningen kan inte avbrytas i nuvarande status.");
+  }
+
+  const createdAt = new Date(order.createdAt).getTime();
+  const now = Date.now();
+  const diffMinutes = (now - createdAt) / (1000 * 60);
+
+  if (diffMinutes > 30) {
+    return err("too_late", "Beställningen kan inte avbrytas efter 30 minuter.");
+  }
+
+  await db.query(`UPDATE orders SET status = 'cancelled' WHERE id = $1`, [orderId]);
+  return getOrder(orderId, customerId);
+}

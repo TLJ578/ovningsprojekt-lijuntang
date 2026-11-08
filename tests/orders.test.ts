@@ -1,6 +1,7 @@
 import request from "supertest";
 import { createApp } from "../src/app";
 import { closeDb, resetDb } from "./helpers/db";
+import { db } from "../src/db";
 
 const app = createApp();
 
@@ -59,6 +60,48 @@ describe("GET /orders/:id", () => {
   it("returnerar 400 för ett ogiltigt id", async () => {
     const res = await request(app).get("/orders/abc").set("X-Customer-Id", "1");
     expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /orders/:id/cancel", () => {
+  it("avbryter en beställning inom 30 minuter", async () => {
+    const createRes = await request(app)
+      .post("/orders")
+      .set("X-Customer-Id", "1")
+      .send({ lines: [{ product: "Musmatta", quantity: 1, unitPrice: 150 }] });
+    expect(createRes.status).toBe(201);
+    const orderId = createRes.body.id;
+
+    const cancelRes = await request(app)
+      .post(`/orders/${orderId}/cancel`)
+      .set("X-Customer-Id", "1");
+    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.body.status).toBe("cancelled");
+  });
+
+  it("returnerar 403 om en annan kund försöker avbryta", async () => {
+    const res = await request(app)
+      .post("/orders/1042/cancel")
+      .set("X-Customer-Id", "2");
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("forbidden");
+  });
+
+  it("returnerar 404 för en beställning som inte finns", async () => {
+    const res = await request(app)
+      .post("/orders/9999/cancel")
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(404);
+  });
+
+  it("returnerar 400 om beställningen lades för mer än 30 minuter sedan", async () => {
+    await db.query("UPDATE orders SET created_at = now() - interval '45 minutes' WHERE id = 1042");
+
+    const res = await request(app)
+      .post("/orders/1042/cancel")
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("too_late");
   });
 });
 
