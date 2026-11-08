@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(git status)",
+      "Bash(git diff)"
+    ],
+    "ask": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npm install *)",
+      "Bash(npm run db:reset)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Bash(git push *)",
+      "Bash(rm -rf *)",
+      "Bash(drop database *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "node .claude/hooks/format-och-typkoll.mjs"
+      }
+    ],
+    "SessionStart": [
+      {
+        "command": "node .claude/hooks/las-logg.mjs"
+      }
+    ],
+    "Stop": [
+      {
+        "command": "node .claude/hooks/stop-koll.mjs"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "node .claude/hooks/skydda-filer.mjs"
+      }
+    ],
+    "PreCompact": [
+      {
+        "command": "node .claude/hooks/spara-beslut.mjs"
+      }
+    ]
+  }
+}
