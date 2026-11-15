@@ -1,6 +1,7 @@
 # price_calc.py
-# prisberakning for ordrar. skriven 2019, flyttad hit fran gamla admin-systemet.
-# OBS rör inte avrundningen, ekonomi har stämt av mot den.
+# prisberakning for ordrar.
+# Steg 1: Parametriserade SQL-frågor mot SQL-injektion
+# OBS rör inte avrundningen (_kapa), ekonomi har stämt av mot den.
 
 import os, sys, json, datetime
 from decimal import Decimal
@@ -21,25 +22,28 @@ class Pris:
 
 
 def _kapa(x):
-    # två decimaler
+    # två decimaler, trunkering
     return Decimal(int(x * 100)) / 100
 
 
 def calc_price(order_id):
     cur = conn.cursor()
-    cur.execute("select discount_code from orders where id = %s" % order_id)
+    # Steg 1: Parametriserad fråga mot orders
+    cur.execute("SELECT discount_code FROM orders WHERE id = %s", (order_id,))
     rad = cur.fetchone()
-    if rad == None:
+    if rad is None:
         return None
     kod = rad[0]
 
-    cur.execute("select quantity, unit_price from order_lines where order_id = %s" % order_id)
+    # Steg 1: Parametriserad fråga mot order_lines
+    cur.execute("SELECT quantity, unit_price FROM order_lines WHERE order_id = %s", (order_id,))
     summa = Decimal(0)
     for q, p in cur.fetchall():
         summa = summa + q * p
 
+    # Steg 1: Parametriserad fråga mot discounts
     if kod:
-        cur.execute("select percent from discounts where code = '%s'" % kod)
+        cur.execute("SELECT percent FROM discounts WHERE code = %s", (kod,))
         r = cur.fetchone()
         if r:
             summa = summa - summa * r[0] / 100
