@@ -9,7 +9,7 @@
 
 ## Bevis
 - npm test: 19 passed (alla tester gröna).
-- Commit: `f4a8b12` - `feat(orders): lagg till avbryt bestallning inom 30 minuter`
+- Commit: `b79060d` - `feat(orders): lagg till avbryt bestallning inom 30 minuter`
 - `docs/granskning.md` godkänd av subagent `granskare`.
 
 ## Förbrukning
