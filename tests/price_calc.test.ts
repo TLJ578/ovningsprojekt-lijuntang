@@ -19,7 +19,9 @@ describe("Karakteriseringstester: src/legacy/price_calc.py", () => {
   it("Test 2: Order med 10 % rabattkod ger korrekt avdragen summa", async () => {
     // Lägg till 10% rabattkod på order 1042
     await db.query("UPDATE orders SET discount_code = 'SOMMAR10' WHERE id = 1042");
-    await db.query("INSERT INTO discounts (code, percent) VALUES ('SOMMAR10', 10) ON CONFLICT DO NOTHING");
+    await db.query(
+      "INSERT INTO discounts (code, percent) VALUES ('SOMMAR10', 10) ON CONFLICT DO NOTHING",
+    );
 
     const res = await calcPrice(1042);
     expect(res.ok).toBe(true);
@@ -33,7 +35,9 @@ describe("Karakteriseringstester: src/legacy/price_calc.py", () => {
 
   it("Test 3: _kapa() trunkerar decimaler strikt utan matematisk avrundning", async () => {
     // Lägg till rad med udda pris som testar trunkeringsbeteendet
-    await db.query("INSERT INTO order_lines (order_id, product, quantity, unit_price) VALUES (1042, 'Kabel', 1, 0.999)");
+    await db.query(
+      "INSERT INTO order_lines (order_id, product, quantity, unit_price) VALUES (1042, 'Kabel', 1, 0.999)",
+    );
 
     const res = await calcPrice(1042);
     expect(res.ok).toBe(true);

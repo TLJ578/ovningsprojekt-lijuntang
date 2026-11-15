@@ -80,26 +80,20 @@ describe("POST /orders/:id/cancel", () => {
   });
 
   it("returnerar 403 om en annan kund försöker avbryta", async () => {
-    const res = await request(app)
-      .post("/orders/1042/cancel")
-      .set("X-Customer-Id", "2");
+    const res = await request(app).post("/orders/1042/cancel").set("X-Customer-Id", "2");
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("forbidden");
   });
 
   it("returnerar 404 för en beställning som inte finns", async () => {
-    const res = await request(app)
-      .post("/orders/9999/cancel")
-      .set("X-Customer-Id", "1");
+    const res = await request(app).post("/orders/9999/cancel").set("X-Customer-Id", "1");
     expect(res.status).toBe(404);
   });
 
   it("returnerar 400 om beställningen lades för mer än 30 minuter sedan", async () => {
     await db.query("UPDATE orders SET created_at = now() - interval '45 minutes' WHERE id = 1042");
 
-    const res = await request(app)
-      .post("/orders/1042/cancel")
-      .set("X-Customer-Id", "1");
+    const res = await request(app).post("/orders/1042/cancel").set("X-Customer-Id", "1");
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("too_late");
   });
