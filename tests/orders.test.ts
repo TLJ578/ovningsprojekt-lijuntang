@@ -97,6 +97,14 @@ describe("POST /orders/:id/cancel", () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("too_late");
   });
+
+  it("returnerar 400 om beställningen redan är avbruten (invalid_state)", async () => {
+    await db.query("UPDATE orders SET status = 'cancelled' WHERE id = 1042");
+
+    const res = await request(app).post("/orders/1042/cancel").set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_state");
+  });
 });
 
 describe("GET /orders/:id/price", () => {
