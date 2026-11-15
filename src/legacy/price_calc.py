@@ -1,7 +1,8 @@
 # price_calc.py
-# prisberakning for ordrar.
+# prisberakning for ordrar. Moderniserad i tre steg:
 # Steg 1: Parametriserade SQL-frågor mot SQL-injektion
 # Steg 2: Injicerad databaskoppling (ingen global koppling vid modulstart)
+# Steg 3: Isolerad filloggning (ren beräkningsfunktion utan dolda sidoeffekter)
 # OBS rör inte avrundningen (_kapa), ekonomi har stämt av mot den.
 
 import os, sys, json, datetime
@@ -27,6 +28,14 @@ def _kapa(x):
 def _get_connection():
     db_url = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/butik")
     return psycopg.connect(db_url, autocommit=True)
+
+
+def _log_calculation(order_id, total):
+    try:
+        with open(LOGG, "a") as f:
+            f.write("%s %s %s\n" % (datetime.datetime.now().isoformat(), order_id, total))
+    except Exception:
+        pass
 
 
 def calc_price(order_id, conn=None):
@@ -61,12 +70,8 @@ def calc_price(order_id, conn=None):
         vat = _kapa(net * MOMS / 100)
         total = net + vat
 
-        try:
-            f = open(LOGG, "a")
-            f.write("%s %s %s\n" % (datetime.datetime.now().isoformat(), order_id, total))
-            f.close()
-        except:
-            pass
+        # Steg 3: Isolerad filloggning
+        _log_calculation(order_id, total)
 
         return Pris(net, vat, total)
     finally:
