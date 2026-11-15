@@ -34,17 +34,17 @@ describe("Karakteriseringstester: src/legacy/price_calc.py", () => {
   });
 
   it("Test 3: _kapa() trunkerar decimaler strikt utan matematisk avrundning", async () => {
-    // Lägg till rad med udda pris som testar trunkeringsbeteendet
+    // 950,00 + 0,99 = 950,99 → moms 237,7475 → _kapa trunkerar till 237,74 (avrundat vore 237,75)
     await db.query(
-      "INSERT INTO order_lines (order_id, product, quantity, unit_price) VALUES (1042, 'Kabel', 1, 0.999)",
+      "INSERT INTO order_lines (order_id, product, quantity, unit_price) VALUES (1042, 'Kabel', 1, 0.99)",
     );
 
     const res = await calcPrice(1042);
     expect(res.ok).toBe(true);
     if (res.ok) {
-      // Netto ska vara trunkerat, inte avrundat uppåt
-      expect(typeof res.value.net).toBe("string");
-      expect(typeof res.value.total).toBe("string");
+      expect(res.value.net).toBe("950.99");
+      expect(res.value.vat).toBe("237.74");
+      expect(res.value.total).toBe("1188.73");
     }
   });
 
